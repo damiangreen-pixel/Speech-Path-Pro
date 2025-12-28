@@ -24,20 +24,25 @@ const Onboarding: React.FC<OnboardingProps> = ({ onAccept }) => {
   const handleScroll = () => {
     if (termsRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = termsRef.current;
-      // Use a small buffer (5px) to ensure reliability across browsers
-      if (scrollTop + clientHeight >= scrollHeight - 5) {
+      // Use a more generous buffer for accessibility and cross-browser reliability
+      if (scrollTop + clientHeight >= scrollHeight - 20) {
         setHasScrolledToBottom(true);
       }
     }
   };
 
-  // Initial check in case the container is too small to scroll
+  // Immediate check: if content is shorter than the window, auto-enable
   useEffect(() => {
-    if (step === 1 && termsRef.current) {
-      const { scrollHeight, clientHeight } = termsRef.current;
-      if (scrollHeight <= clientHeight) {
-        setHasScrolledToBottom(true);
-      }
+    if (step === 1) {
+      const timer = setTimeout(() => {
+        if (termsRef.current) {
+          const { scrollHeight, clientHeight } = termsRef.current;
+          if (scrollHeight <= clientHeight + 10) {
+            setHasScrolledToBottom(true);
+          }
+        }
+      }, 500);
+      return () => clearTimeout(timer);
     }
   }, [step]);
 

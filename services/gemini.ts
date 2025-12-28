@@ -9,34 +9,35 @@ export const generateLessonPlan = async (
   historySummary?: string, 
   adhocPrompt?: string,
   diagnoses?: string[],
-  allGoals?: string[]
+  allGoals?: string[],
+  style: string = 'Structured'
 ) => {
   const ai = getClient();
   
-  // Stronger clinical framing for the model
-  let prompt = `You are an expert Speech-Language Pathologist. Generate a high-fidelity, evidence-based lesson plan for a student in grade ${grade}.
+  let prompt = `You are a world-class Speech-Language Pathologist. Generate a high-fidelity, evidence-based lesson plan for a student in grade ${grade}.
   
-  PRIMARY FOCUS GOAL: "${goal}"`;
+  PRIMARY FOCUS GOAL: "${goal}"
+  SESSION STYLE: "${style}"`;
   
   if (diagnoses && diagnoses.length > 0) {
-    prompt += `\n\nCLINICAL ISSUES & DIAGNOSES: ${diagnoses.join(', ')}. 
-    CRITICAL INSTRUCTION: Tailor the activity scaffolding and materials to address the specific clinical deficits, sensory needs, or processing styles associated with these diagnoses. The plan must be clinically appropriate for these conditions.`;
+    prompt += `\n\nSTUDENT NEEDS & DIAGNOSES: ${diagnoses.join(', ')}. 
+    INSTRUCTION: Tailor activity scaffolding, sensory considerations, and material complexity specifically for these needs.`;
   }
 
   if (allGoals && allGoals.length > 1) {
-    const secondaryGoals = allGoals.filter(g => g !== goal);
-    prompt += `\n\nSECONDARY CLINICAL OBJECTIVES: ${secondaryGoals.join('; ')}. 
-    Try to incorporate natural opportunities to work on these secondary skills without overwhelming the student.`;
+    const secondary = allGoals.filter(g => g !== goal);
+    prompt += `\n\nSECONDARY IEP GOALS: ${secondary.join('; ')}. 
+    INSTRUCTION: Look for naturalistic opportunities to cross-target these objectives within the primary activity.`;
   }
   
   if (historySummary) {
-    prompt += `\n\nLATEST PERFORMANCE CONTEXT: ${historySummary}. 
-    Adjust the level of support (scaffolding) based on this recent performance data.`;
+    prompt += `\n\nLATEST PROGRESS SUMMARY: ${historySummary}. 
+    INSTRUCTION: Adjust the level of support (prompting hierarchy) based on this recent data.`;
   }
   
   if (adhocPrompt) {
-    prompt += `\n\nCUSTOM USER REQUIREMENTS: "${adhocPrompt}". 
-    Ensure this theme or specific modification is fully integrated into the procedure.`;
+    prompt += `\n\nUSER MODIFICATION: "${adhocPrompt}". 
+    INSTRUCTION: Ensure this specific theme or requirement is fully integrated.`;
   }
 
   const response = await ai.models.generateContent({
@@ -65,11 +66,40 @@ export const generateLessonPlan = async (
   return JSON.parse(response.text || '{}');
 };
 
+export const generateStimuli = async (goal: string, grade: string, studentInterests?: string) => {
+  const ai = getClient();
+  const prompt = `Generate speech therapy stimuli for a ${grade} student. 
+  Targeting: "${goal}". 
+  Student Interests: ${studentInterests || "Generic"}.
+  Provide:
+  1. A list of 15 age-appropriate target words.
+  2. 5 functional sentences using those targets.
+  3. A very short (4-6 sentence) "Mini-Story" that weaves in the target sounds/skills.`;
+
+  const response = await ai.models.generateContent({
+    model: "gemini-3-flash-preview",
+    contents: prompt,
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          words: { type: Type.ARRAY, items: { type: Type.STRING } },
+          sentences: { type: Type.ARRAY, items: { type: Type.STRING } },
+          story: { type: Type.STRING }
+        },
+        required: ["words", "sentences", "story"]
+      }
+    }
+  });
+  return JSON.parse(response.text || '{}');
+};
+
 export const helpWithSoapNote = async (observations: string) => {
   const ai = getClient();
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
-    contents: `You are a professional Speech-Language Pathologist. Based on these session observations: "${observations}", draft a structured clinical SOAP note. Even if the input is short, provide a professional interpretation.`,
+    contents: `You are a professional Speech-Language Pathologist. Based on these session observations: "${observations}", draft a structured professional SOAP note. Even if the input is short, provide a thoughtful interpretation.`,
     config: {
       responseMimeType: "application/json",
       responseSchema: {
@@ -77,7 +107,7 @@ export const helpWithSoapNote = async (observations: string) => {
         properties: {
           subjective: { type: Type.STRING, description: "Student's participation, behavior, and self-report" },
           objective: { type: Type.STRING, description: "Specific measurable performance data and trial outcomes" },
-          assessment: { type: Type.STRING, description: "Clinical analysis and interpretation of progress" },
+          assessment: { type: Type.STRING, description: "Professional analysis and interpretation of progress" },
           plan: { type: Type.STRING, description: "Immediate recommendations for the next session" }
         },
         required: ["subjective", "objective", "assessment", "plan"]
@@ -98,9 +128,9 @@ export const helpWithSoapNote = async (observations: string) => {
   } catch (e) {
     console.error("Failed to parse SOAP note JSON:", e);
     return {
-      subjective: "Student participated in reading activity.",
+      subjective: "Student participated in session activity.",
       objective: observations,
-      assessment: "Patient demonstrated effort with specific targets.",
+      assessment: "Student demonstrated effort with specific targets.",
       plan: "Continue monitoring progress in next session."
     };
   }
@@ -109,13 +139,13 @@ export const helpWithSoapNote = async (observations: string) => {
 export const analyzeCuingHierarchy = async (studentName: string, goal: string, transcript: string[], metrics: any) => {
   const ai = getClient();
   const transcriptText = transcript.join('\n');
-  const prompt = `Analyze the effectiveness of the cuing hierarchy used for ${studentName} during a session targeting: "${goal}".
+  const prompt = `Analyze the effectiveness of the support hierarchy used for ${studentName} during a session targeting: "${goal}".
   
-  Trial Data: Correct: ${metrics.correctTally}, Incorrect: ${metrics.incorrectTally}, Primary Cuing Level used: ${metrics.cuingLevel}.
+  Trial Data: Correct: ${metrics.correctTally}, Incorrect: ${metrics.incorrectTally}, Primary Support Level used: ${metrics.cuingLevel}.
   Session Transcript/Observations:
   ${transcriptText}
 
-  Provide a professional clinical assessment of how the student responded to different types of support. 
+  Provide a professional assessment of how the student responded to different types of support. 
   Identify if the cues were too frequent, appropriate, or if they should be faded.
   Include 3 specific recommendations for future sessions.`;
 
@@ -127,7 +157,7 @@ export const analyzeCuingHierarchy = async (studentName: string, goal: string, t
       responseSchema: {
         type: Type.OBJECT,
         properties: {
-          assessment: { type: Type.STRING, description: "A detailed clinical analysis of cuing effectiveness" },
+          assessment: { type: Type.STRING, description: "A detailed professional analysis of support effectiveness" },
           recommendations: {
             type: Type.ARRAY,
             items: { type: Type.STRING },
@@ -148,12 +178,12 @@ export const predictMilestone = async (studentName: string, primaryGoal: string,
   
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
-    contents: `Analyze the clinical progress for student ${studentName} on their primary goal: "${primaryGoal}". 
+    contents: `Analyze the progress for student ${studentName} on their primary goal: "${primaryGoal}". 
     Historical Accuracy Data:
     ${historyData}
     
     Predict when this student will likely reach a consistent 80% accuracy (mastery). Consider the trend.
-    Return a professional clinical projection.`,
+    Return a professional projection.`,
     config: {
       responseMimeType: "application/json",
       responseSchema: {
@@ -161,7 +191,7 @@ export const predictMilestone = async (studentName: string, primaryGoal: string,
         properties: {
           predictedDate: { type: Type.STRING, description: "Estimated completion date (e.g. Early March 2025)" },
           confidence: { type: Type.NUMBER, description: "Confidence level 0-100" },
-          rationale: { type: Type.STRING, description: "Clinical reasoning for the prediction" }
+          rationale: { type: Type.STRING, description: "Professional reasoning for the prediction" }
         },
         required: ["predictedDate", "confidence", "rationale"]
       }

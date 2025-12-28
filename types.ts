@@ -29,15 +29,25 @@ export interface MilestonePrediction {
   rationale: string;
 }
 
+export interface AvatarConfig {
+  bgColor: string;
+  shape: 'circle' | 'rounded' | 'squircle' | 'hexagon';
+  icon: string;
+}
+
 export interface Student extends AuditFields {
   id: string;
   name: string;
   grade: string;
   diagnoses: string[];
   goals: Goal[];
-  isActive: boolean; // Added to handle student status
+  isActive: boolean;
   lastSeen?: string;
   milestonePrediction?: MilestonePrediction;
+  avatarConfig?: AvatarConfig;
+  customAvatarUrl?: string; // Base64 or URL
+  severity: number; // 1-10 for Risk Matrix
+  functionalImpact: number; // 1-10 for Risk Matrix
 }
 
 export interface SOAPNote extends AuditFields {
@@ -52,6 +62,17 @@ export interface SOAPNote extends AuditFields {
   plan: string;
   parentGuide?: string; 
   metrics?: SessionMetrics; 
+}
+
+export interface SessionAppointment extends AuditFields {
+  id: string;
+  studentIds: string[]; // Changed from studentId to studentIds for group support
+  dateTime: string; // ISO string
+  durationMinutes: number;
+  notes?: string;
+  status: 'scheduled' | 'completed' | 'cancelled';
+  linkedNoteIds?: string[]; // Multiple notes for a group session
+  lessonPlanId?: string;
 }
 
 export interface LessonPlan extends AuditFields {
@@ -72,4 +93,4 @@ export interface UserProfile {
   micPermissionGranted?: boolean;
 }
 
-export type View = 'home' | 'dashboard' | 'students' | 'notes' | 'planner' | 'profile' | 'onboarding';
+export type View = 'home' | 'dashboard' | 'students' | 'notes' | 'planner' | 'profile' | 'onboarding' | 'calendar';

@@ -11,45 +11,105 @@
     <style>
         body { font-family: 'Inter', sans-serif; }
         
+        /* Ensure the print triggers are responsive and on top */
+        .print-btn {
+          position: relative;
+          z-index: 100;
+        }
+
         @media print {
-            /* Hide everything by default */
-            body * {
-                visibility: hidden;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-            
-            /* Show only the printable area */
-            #printable-area, #printable-area * {
-                visibility: visible;
-            }
-            
-            /* Position the printable area at the top left */
-            #printable-area {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                margin: 0;
-                padding: 0;
-                background: white !important;
+            @page {
+                margin: 1cm;
+                size: auto;
             }
 
-            /* Hide buttons and interactive elements in print */
-            .no-print {
+            body, html {
+                background: white !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                height: auto !important;
+                width: 100% !important;
+                overflow: visible !important;
+            }
+
+            /* Hide UI components not relevant for physical output */
+            nav, header, .no-print, button, .tooltip-container, .group-picker-trigger, input, select, textarea {
                 display: none !important;
             }
 
-            /* Ensure modals aren't clipped or scrolled */
-            .max-h-\[90vh\] {
+            /* Force color preservation */
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
+
+            #root > div {
+                display: block !important;
+            }
+
+            #root > div > main {
+                display: block !important;
+                position: static !important;
+                width: 100% !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+
+            #printable-area {
+                display: block !important;
+                max-width: none !important;
+            }
+
+            /* Student Roster Print: 2 columns */
+            .printable-roster {
+                display: grid !important;
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 1.5cm !important;
+            }
+
+            /* Modals: Isolate for printing */
+            .fixed.inset-0:has(.printable-modal) {
+                position: absolute !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100% !important;
+                height: auto !important;
+                background: white !important;
+                z-index: 9999 !important;
+                display: block !important;
+            }
+
+            .printable-modal {
                 max-height: none !important;
+                height: auto !important;
+                width: 100% !important;
+                border: none !important;
+                box-shadow: none !important;
+                position: static !important;
+                display: block !important;
                 overflow: visible !important;
+                margin: 0 !important;
             }
-            
-            /* Force white background for the page */
-            html, body {
-                background-color: white !important;
+
+            .printable-modal .overflow-y-auto {
+                overflow: visible !important;
+                max-height: none !important;
             }
+
+            /* Standard containers */
+            .printable-plan, .printable-calendar, .printable-notes {
+                display: block !important;
+                width: 100% !important;
+            }
+
+            .print-only {
+                display: block !important;
+            }
+        }
+
+        .print-only {
+            display: none;
         }
     </style>
 <script type="importmap">
