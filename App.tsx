@@ -185,6 +185,12 @@ const App: React.FC = () => {
     setAppointments(appointments.map(a => a.id === updated.id ? { ...updated, updatedAt: new Date().toISOString(), updatedBy: userProfile.name } : a));
   };
 
+  const handleDeleteAppointment = (id: string) => {
+    if (window.confirm("Remove this session from the calendar?")) {
+      setAppointments(appointments.filter(a => a.id !== id));
+    }
+  };
+
   const renderView = () => {
     if (!userProfile.acceptedTermsDate) return <Onboarding onAccept={(mic) => setUserProfile(p => ({...p, acceptedTermsDate: new Date().toISOString(), micPermissionGranted: mic}))} />;
     const selectedStudents = students.filter(s => selectedStudentIds.includes(s.id));
@@ -193,7 +199,7 @@ const App: React.FC = () => {
     switch (currentView) {
       case 'home': return <Home key={`home-${viewKey}`} onNavigate={handleNavigate} students={students} notes={notes} availableGoalsCount={availableGoals.length} onSeedSample={handleSeedSampleData} />;
       case 'dashboard': return <Dashboard key={`dash-${viewKey}`} students={students} notes={notes} appointments={appointments} onNavigate={handleNavigate} onSelectStudent={(id) => handleOpenStudentRecord(id, 'profile')} onSelectNote={handleSelectNote} onExport={() => {}} onExportSheets={() => {}} onImport={() => {}} onSeedSample={handleSeedSampleData} />;
-      case 'calendar': return <CalendarView key={`cal-${viewKey}`} students={students} appointments={appointments} notes={notes} lessonPlans={lessonPlans} onSchedule={handleScheduleSession} onUpdateAppointment={handleUpdateAppointment} onQuickAddStudent={(name) => handleAddStudent({ name, grade: 'K', diagnoses: [], goals: [] })} onStartSession={(studentIds, apptId, lpId) => { setSelectedStudentIds(studentIds); setPreselectedLessonPlanId(lpId || null); handleNavigate('notes', false, true); }} />;
+      case 'calendar': return <CalendarView key={`cal-${viewKey}`} students={students} appointments={appointments} notes={notes} lessonPlans={lessonPlans} onSchedule={handleScheduleSession} onUpdateAppointment={handleUpdateAppointment} onDeleteAppointment={handleDeleteAppointment} onQuickAddStudent={(name) => handleAddStudent({ name, grade: 'K', diagnoses: [], goals: [] })} onStartSession={(studentIds, apptId, lpId) => { setSelectedStudentIds(studentIds); setPreselectedLessonPlanId(lpId || null); handleNavigate('notes', false, true); }} />;
       case 'students': return <StudentList key={`students-${viewKey}`} students={students} notes={notes} appointments={appointments} lessonPlans={lessonPlans} userName={userProfile.name} initialOpenForm={autoOpenStudentForm} initialViewingStudentId={selectedStudentIds.length === 1 ? selectedStudentIds[0] : undefined} initialTab={initialStudentTab} availableDiagnoses={availableDiagnoses} availableGoals={availableGoals} onAddStudent={handleAddStudent} onUpdateStudent={handleUpdateStudent} onDeleteStudent={handleDeleteStudent} onArchiveStudent={handleArchiveStudent} onRestoreStudent={handleRestoreStudent} onAddDiagnosisToBank={handleAddNewDiagnosis} onAddGoalToBank={handleAddNewGoal} onSelectStudent={(id, view) => { setSelectedStudentIds([id]); handleNavigate(view || 'notes', false, true); }} onSelectMultipleStudents={(ids) => { setSelectedStudentIds(ids); handleNavigate('notes', false, true); }} onEditNote={(sid, nid) => { setSelectedStudentIds([sid]); setSelectedNoteId(nid); handleNavigate('notes', false, true); }} onCloseForm={() => setAutoOpenStudentForm(false)} onSeedSample={handleSeedSampleData} />;
       case 'notes':
         if (!!selectedNoteId || selectedStudentIds.length > 0) return <NoteEditor key={`notes-editor-${viewKey}`} studentsInGroup={selectedStudents} allStudents={students} notes={notes} lessonPlans={lessonPlans} userName={userProfile.name} initialNote={initialNote} initialLessonPlanId={preselectedLessonPlanId} onSelectStudents={(ids) => setSelectedStudentIds(ids)} onSaveNotes={(noteDataArray) => {

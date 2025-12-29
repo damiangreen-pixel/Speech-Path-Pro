@@ -11,15 +11,15 @@
     <style>
         body { font-family: 'Inter', sans-serif; }
         
-        /* Ensure the print triggers are responsive and on top */
-        .print-btn {
-          position: relative;
-          z-index: 100;
-        }
+        /* Custom scrollbar for better UI feel */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
         @media print {
             @page {
-                margin: 1cm;
+                margin: 1.5cm;
                 size: auto;
             }
 
@@ -32,12 +32,12 @@
                 overflow: visible !important;
             }
 
-            /* Hide UI components not relevant for physical output */
-            nav, header, .no-print, button, .tooltip-container, .group-picker-trigger, input, select, textarea {
+            /* Hide interactive UI elements */
+            nav, header, .no-print, button, .tooltip-container, .group-picker-trigger, input, select, textarea, .tabs-container {
                 display: none !important;
             }
 
-            /* Force color preservation */
+            /* Force color and background preservation for charts */
             * {
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
@@ -61,14 +61,14 @@
                 max-width: none !important;
             }
 
-            /* Student Roster Print: 2 columns */
+            /* Student Roster Print Configuration */
             .printable-roster {
                 display: grid !important;
                 grid-template-columns: repeat(2, 1fr) !important;
                 gap: 1.5cm !important;
             }
 
-            /* Modals: Isolate for printing */
+            /* Student Record Modal Print Configuration */
             .fixed.inset-0:has(.printable-modal) {
                 position: absolute !important;
                 top: 0 !important;
@@ -97,7 +97,21 @@
                 max-height: none !important;
             }
 
-            /* Standard containers */
+            /* Force visibility of all detail sections during print */
+            .print-section {
+                display: block !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                page-break-inside: avoid !important;
+                margin-bottom: 2cm !important;
+            }
+
+            /* Ensure charts scale properly for print */
+            svg {
+                max-width: 100% !important;
+                height: auto !important;
+            }
+
             .printable-plan, .printable-calendar, .printable-notes {
                 display: block !important;
                 width: 100% !important;
@@ -106,9 +120,22 @@
             .print-only {
                 display: block !important;
             }
+            
+            /* Add clinical header to every printed page */
+            .print-clinical-header {
+                display: block !important;
+                border-bottom: 2px solid #000;
+                padding-bottom: 10px;
+                margin-bottom: 20px;
+                font-weight: bold;
+            }
         }
 
         .print-only {
+            display: none;
+        }
+        
+        .print-clinical-header {
             display: none;
         }
     </style>

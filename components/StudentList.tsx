@@ -56,7 +56,7 @@ const DecisionCharts: React.FC<{ student: Student; notes: SOAPNote[] }> = ({ stu
   const totalCueCount = studentNotes.length || 1;
 
   return (
-    <div className="space-y-12 animate-in fade-in duration-700 pb-12">
+    <div className="space-y-12 pb-12">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 shadow-sm relative z-30">
           <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center justify-between"><span>Progress over time (%)</span><Tooltip title="Trend analysis" body="This chart tracks accuracy percentages across sessions to help identify progress, plateaus, or regressions early on."><i className="fas fa-info-circle text-slate-300 hover:text-indigo-500 transition-colors cursor-help"></i></Tooltip></h5>
@@ -265,36 +265,83 @@ const StudentList: React.FC<StudentListProps> = ({
                 <button onClick={() => setHistoryTab('decision-support')} className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest transition-all ${historyTab === 'decision-support' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500'}`}>Decision Support Charts</button>
                 <button onClick={() => setHistoryTab('timeline')} className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest transition-all ${historyTab === 'timeline' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500'}`}>Session History</button>
              </div>
+             
              <div className="p-8 space-y-8 overflow-y-auto custom-scrollbar flex-1">
-                {(historyTab === 'profile' || window.matchMedia('print').matches) && (
-                  <div className="space-y-8">
-                    <section className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 flex items-center justify-between"><div className="flex-1"><h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-2">Current Mastery</h5><div className="flex items-center gap-4"><p className="text-3xl font-black text-slate-900">{getStudentMastery(viewingStudent.id)}%</p><div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden"><div className="h-full bg-indigo-600 rounded-full" style={{ width: `${getStudentMastery(viewingStudent.id)}%` }}></div></div></div></div></section>
-                    <section>
-                      <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 border-b pb-2">Identified Issues</h5>
-                      <div className="flex flex-wrap gap-2">{viewingStudent.diagnoses.map(d => (<span key={d} className="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase border border-indigo-100 shadow-sm">{d}</span>))}</div>
-                    </section>
-                    <section>
-                      <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 border-b pb-2">Therapeutic Goals</h5>
-                      <div className="space-y-3">{viewingStudent.goals.map((g, i) => (<div key={i} className={`p-5 rounded-2xl border-2 flex items-start gap-4 ${g.isPrimary ? 'bg-indigo-50/50 border-indigo-200' : 'bg-slate-50 border-slate-100'}`}><div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${g.isPrimary ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-200 text-slate-500'}`}><i className={g.isPrimary ? "fas fa-star text-[10px]" : "fas fa-bullseye text-[10px]"}></i></div><p className="text-sm font-bold leading-relaxed">{g.text}</p></div>))}</div>
-                    </section>
-                  </div>
-                )}
-                {(historyTab === 'decision-support' || window.matchMedia('print').matches) && <DecisionCharts student={viewingStudent} notes={notes} />}
-                {(historyTab === 'timeline' || window.matchMedia('print').matches) && (
-                  <div className="space-y-4">
-                    <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 border-b pb-2">Complete Session Log</h5>
-                    {sessionTimeline.map(item => {
-                      const isNote = item.timelineType === 'note'; const n = isNote ? item as SOAPNote : null; const a = !isNote ? item as SessionAppointment : null;
-                      return (
-                        <div key={item.id} className="p-5 rounded-[2rem] border-2 bg-white border-slate-100">
-                           <div className="flex justify-between items-start mb-3"><div className="flex items-center gap-3"><div className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs ${isNote ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-600'}`}><i className={`fas ${isNote ? 'fa-file-medical' : 'fa-calendar-day'}`}></i></div><div><p className="text-sm font-black text-slate-900">{item.timelineDate.toLocaleDateString()}</p><div className="flex items-center gap-2 mt-0.5"><span className="text-[8px] font-black uppercase">{isNote ? 'Note Filed' : 'Session Recorded'}</span></div></div></div></div>
-                           {isNote && <div className="grid grid-cols-2 gap-3 mt-4 text-[10px] text-slate-600 font-medium leading-relaxed"><div><span className="font-black text-indigo-700">O:</span> {n?.objective}</div><div><span className="font-black text-indigo-700">A:</span> {n?.assessment}</div></div>}
+                {/* Profile Summary Section */}
+                <div className={`space-y-8 print-section ${historyTab === 'profile' ? 'block' : 'hidden print:block'}`}>
+                  <section className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 flex items-center justify-between">
+                    <div className="flex-1">
+                      <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-2">Current Mastery</h5>
+                      <div className="flex items-center gap-4">
+                        <p className="text-3xl font-black text-slate-900">{getStudentMastery(viewingStudent.id)}%</p>
+                        <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
+                          <div className="h-full bg-indigo-600 rounded-full" style={{ width: `${getStudentMastery(viewingStudent.id)}%` }}></div>
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
+                      </div>
+                    </div>
+                  </section>
+                  <section>
+                    <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 border-b pb-2">Identified Issues</h5>
+                    <div className="flex flex-wrap gap-2">
+                      {viewingStudent.diagnoses.map(d => (
+                        <span key={d} className="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase border border-indigo-100 shadow-sm">{d}</span>
+                      ))}
+                    </div>
+                  </section>
+                  <section>
+                    <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 border-b pb-2">Therapeutic Goals</h5>
+                    <div className="space-y-3">
+                      {viewingStudent.goals.map((g, i) => (
+                        <div key={i} className={`p-5 rounded-2xl border-2 flex items-start gap-4 ${g.isPrimary ? 'bg-indigo-50/50 border-indigo-200' : 'bg-slate-50 border-slate-100'}`}>
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${g.isPrimary ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-200 text-slate-500'}`}>
+                            <i className={g.isPrimary ? "fas fa-star text-[10px]" : "fas fa-bullseye text-[10px]"}></i>
+                          </div>
+                          <p className="text-sm font-bold leading-relaxed">{g.text}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                </div>
+
+                {/* Decision Support Charts Section */}
+                <div className={`print-section ${historyTab === 'decision-support' ? 'block' : 'hidden print:block'}`}>
+                  <DecisionCharts student={viewingStudent} notes={notes} />
+                </div>
+
+                {/* Session Timeline Section */}
+                <div className={`space-y-4 print-section ${historyTab === 'timeline' ? 'block' : 'hidden print:block'}`}>
+                  <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 border-b pb-2">Complete Session Log</h5>
+                  {sessionTimeline.map(item => {
+                    const isNote = item.timelineType === 'note'; 
+                    const n = isNote ? item as SOAPNote : null; 
+                    const a = !isNote ? item as SessionAppointment : null;
+                    return (
+                      <div key={item.id} className="p-5 rounded-[2rem] border-2 bg-white border-slate-100 break-inside-avoid mb-4">
+                         <div className="flex justify-between items-start mb-3">
+                           <div className="flex items-center gap-3">
+                             <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs ${isNote ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-600'}`}>
+                               <i className={`fas ${isNote ? 'fa-file-medical' : 'fa-calendar-day'}`}></i>
+                             </div>
+                             <div>
+                               <p className="text-sm font-black text-slate-900">{item.timelineDate.toLocaleDateString()}</p>
+                               <div className="flex items-center gap-2 mt-0.5">
+                                 <span className="text-[8px] font-black uppercase">{isNote ? 'Note Filed' : 'Session Recorded'}</span>
+                               </div>
+                             </div>
+                           </div>
+                         </div>
+                         {isNote && (
+                           <div className="grid grid-cols-2 gap-3 mt-4 text-[10px] text-slate-600 font-medium leading-relaxed">
+                             <div><span className="font-black text-indigo-700 uppercase">Objective:</span> {n?.objective}</div>
+                             <div><span className="font-black text-indigo-700 uppercase">Assessment:</span> {n?.assessment}</div>
+                           </div>
+                         )}
+                      </div>
+                    );
+                  })}
+                </div>
              </div>
+             
              <div className="p-6 bg-slate-50 border-t flex flex-wrap gap-3 shrink-0 no-print">
                 <button onClick={() => onSelectStudent(viewingStudent.id, 'notes')} className="flex-1 bg-indigo-700 text-white py-4 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl hover:bg-indigo-800 transition-all flex items-center justify-center gap-2"><i className="fas fa-file-signature"></i> Quick Note</button>
                 <button onClick={() => handleEditMode(viewingStudent)} className="flex-1 bg-white text-slate-600 border-2 border-slate-200 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-2"><i className="fas fa-user-edit"></i> Edit Profile</button>
